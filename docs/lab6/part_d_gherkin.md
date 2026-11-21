@@ -1,32 +1,37 @@
 # Part D – Gherkin scenarios for our team story
 
-> ⚠️ EXAMPLE ONLY – replace the story and scenarios with ONE story from YOUR team backlog.
+**Project:** Pharmacy Stock & Expiry Tracker
 
-**Story:** As a student, I want to pay my tuition invoice online so that I do not queue at the cashier.
+**Story:** As a pharmacist, I want to be warned about medicines that are close to
+their expiry date, so that I can sell or return them before they are wasted.
 
 ```gherkin
-Feature: Pay tuition online
+Feature: Expiry date warning
 
-  Scenario: Pay the full invoice (happy path)
-    Given a student with an unpaid invoice of 7200 EGP
-    When the student pays 7200 EGP by card
-    Then the invoice is marked as "paid"
-    And the student receives a payment receipt
+  Background:
+    Given today's date is "2026-11-21"
 
-  Scenario: Payment refused because the card is declined (error case)
-    Given a student with an unpaid invoice of 7200 EGP
-    When the student pays with a declined card
-    Then the payment is refused with "card declined"
-    And the invoice stays "unpaid"
+  Scenario: Medicine close to expiry is flagged (happy path)
+    Given the stock has "Panadol" with 20 boxes expiring on "2026-12-10"
+    When the pharmacist opens the expiry report
+    Then "Panadol" is listed as "expiring soon"
+    And the report shows 20 boxes for "Panadol"
 
-  Scenario Outline: Partial payments (edge case)
-    Given a student with an unpaid invoice of 7200 EGP
-    When the student pays <amount> EGP
-    Then the invoice status is "<status>"
+  Scenario: Expired medicine cannot be sold (refused case)
+    Given the stock has "Augmentin" with 5 boxes expiring on "2026-11-01"
+    When the pharmacist tries to sell 1 box of "Augmentin"
+    Then the sale is refused with "medicine is expired"
+    And the stock of "Augmentin" is still 5 boxes
+
+  Scenario Outline: Status depends on days left until expiry (edge / outline)
+    Given the stock has "Brufen" with 10 boxes expiring on "<expiry>"
+    When the pharmacist opens the expiry report
+    Then "Brufen" is listed as "<status>"
 
     Examples:
-      | amount | status         |
-      | 7200   | paid           |
-      | 3600   | partially paid |
-      | 0      | unpaid         |
+      | expiry     | status        |
+      | 2026-11-20 | expired       |
+      | 2026-11-21 | expiring soon |
+      | 2026-12-21 | expiring soon |
+      | 2027-03-01 | ok            |
 ```
